@@ -21,12 +21,20 @@ import android.os.Bundle;
 import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 
+import com.dieam.reactnativepushnotification.helpers.ApplicationBadgeHelper;
 import com.facebook.react.bridge.ReadableMap;
 
 import org.json.JSONArray;
 import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Formatter;
 
 import static com.dieam.reactnativepushnotification.modules.RNPushNotification.LOG_TAG;
 import static com.dieam.reactnativepushnotification.modules.RNPushNotificationAttributes.fromJson;
@@ -136,12 +144,6 @@ public class RNPushNotificationHelper {
                 return;
             }
 
-            if (bundle.getString("message") == null) {
-                // this happens when a 'data' notification is received - we do not synthesize a local notification in this case
-                Log.d(LOG_TAG, "Cannot send to notification centre because there is no 'message' field in: " + bundle);
-                return;
-            }
-
             String notificationIdString = bundle.getString("id");
             if (notificationIdString == null) {
                 Log.e(LOG_TAG, "No notification ID specified for the notification");
@@ -150,11 +152,63 @@ public class RNPushNotificationHelper {
 
             Resources res = context.getResources();
             String packageName = context.getPackageName();
+            Map<String, Object> alertData = jsonToMap(bundle.getString("alert"));
+            String notificationMessage = null;
+
+            if (alertData != null) {
+                String locKey = (String)alertData.get("loc-key");
+                List locArgs = (List) alertData.get("loc-args");
+                String arg = null;
+
+                if (locArgs != null && !locArgs.isEmpty()) {
+                    arg = (String)locArgs.get(0);
+                }
+
+                if (locKey != null) {
+                    String localizedString = getLocalizedStringResourceByKey(locKey);
+
+                    if (localizedString != null) {
+                        if (arg != null) {
+                            notificationMessage = String.format(localizedString, arg);
+                        } else {
+                            notificationMessage = localizedString;
+                        }
+                    }
+                }
+            }
+
+            if (notificationMessage == null) {
+                notificationMessage = bundle.getString("message");
+
+                if (notificationMessage != null) {
+                    String localizedString = getLocalizedStringResourceByKey(notificationMessage);
+
+                    if (localizedString != null) {
+                        notificationMessage = localizedString;
+                    }
+                }
+            }
 
             String title = bundle.getString("title");
             if (title == null) {
                 ApplicationInfo appInfo = context.getApplicationInfo();
                 title = context.getPackageManager().getApplicationLabel(appInfo).toString();
+            }
+
+            if (notificationMessage == null) {
+                // this happens when a 'data' notification is received - we do not synthesize a local notification in this case
+                Log.d(LOG_TAG, "Cannot send to notification centre because there is no 'message' field in: " + bundle);
+                return;
+            }
+
+
+            String badgeString = bundle.getString("badge");
+            Log.e(LOG_TAG, badgeString);
+            if (badgeString != null) {
+                int badge = Integer.parseInt(badgeString);
+                Log.e(LOG_TAG, String.format("badge %d", badge));
+
+                ApplicationBadgeHelper.INSTANCE.setApplicationIconBadgeNumber(context, badge);
             }
 
             NotificationCompat.Builder notification = new NotificationCompat.Builder(context)
@@ -169,7 +223,7 @@ public class RNPushNotificationHelper {
                 notification.setGroup(group);
             }
 
-            notification.setContentText(bundle.getString("message"));
+            notification.setContentText(notificationMessage);
 
             String largeIcon = bundle.getString("largeIcon");
 
@@ -219,7 +273,7 @@ public class RNPushNotificationHelper {
             String bigText = bundle.getString("bigText");
 
             if (bigText == null) {
-                bigText = bundle.getString("message");
+                bigText = notificationMessage;
             }
 
             notification.setStyle(new NotificationCompat.BigTextStyle().bigText(bigText));
@@ -463,5 +517,68 @@ public class RNPushNotificationHelper {
         } else {
             editor.apply();
         }
+    }
+
+    public static Map<String, Object> jsonToMap(String t) throws JSONException {
+        Map<String, Object> retMap = new HashMap<String, Object>();
+        JSONObject json = new JSONObject(t);
+
+        if (json != JSONObject.NULL) {
+            retMap = toMap(json);
+        }
+
+        return retMap;
+    }
+
+    public static Map<String, Object> toMap(JSONObject object) throws JSONException {
+        Map<String, Object> map = new HashMap<String, Object>();
+
+        Iterator<String> keysItr = object.keys();
+        while(keysItr.hasNext()) {
+            String key = keysItr.next();
+            Object value = object.get(key);
+
+            if(value instanceof JSONArray) {
+                value = toList((JSONArray) value);
+            }
+
+            else if(value instanceof JSONObject) {
+                value = toMap((JSONObject) value);
+            }
+            map.put(key, value);
+        }
+        return map;
+    }
+
+    public static List<Object> toList(JSONArray array) throws JSONException {
+        List<Object> list = new ArrayList<Object>();
+        for(int i = 0; i < array.length(); i++) {
+            Object value = array.get(i);
+            if(value instanceof JSONArray) {
+                value = toList((JSONArray) value);
+            }
+
+            else if(value instanceof JSONObject) {
+                value = toMap((JSONObject) value);
+            }
+            list.add(value);
+        }
+        return list;
+    }
+
+    private String getLocalizedStringResourceByKey(String key) {
+        String localizedText = "";
+
+        try {
+            String packageName = context.getPackageName();
+            Resources res = context.getResources();
+            int resId = res.getIdentifier(key, "string", packageName);
+
+            localizedText = res.getString(resId);
+        } catch (Exception e) {
+            Log.d(LOG_TAG, "Couldn't find string for push notification key");
+        }
+
+        return localizedText;
     }
 }
