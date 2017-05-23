@@ -158,18 +158,25 @@ public class RNPushNotificationHelper {
             if (alertData != null) {
                 String locKey = (String)alertData.get("loc-key");
                 List locArgs = (List) alertData.get("loc-args");
-                String arg = null;
+                String arg1 = null;
+                String arg2 = null;
 
-                if (locArgs != null && !locArgs.isEmpty()) {
-                    arg = (String)locArgs.get(0);
+                if (locArgs != null && locArgs.size() >= 1) {
+                    arg1 = (String)locArgs.get(0);
+
+                    if (locArgs.size() >= 2) {
+                        arg2 = (String)locArgs.get(1);
+                    }
                 }
 
                 if (locKey != null) {
                     String localizedString = getLocalizedStringResourceByKey(locKey);
 
                     if (localizedString != null) {
-                        if (arg != null) {
-                            notificationMessage = String.format(localizedString, arg);
+                        if (arg1 != null && arg2 != null) {
+                            notificationMessage = String.format(localizedString, arg1, arg2);
+                        } else if (arg1 != null) {
+                            notificationMessage = String.format(localizedString, arg1);
                         } else {
                             notificationMessage = localizedString;
                         }
