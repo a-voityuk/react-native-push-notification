@@ -152,7 +152,7 @@ public class RNPushNotificationHelper {
 
             Resources res = context.getResources();
             String packageName = context.getPackageName();
-            Map<String, Object> alertData = jsonToMap(bundle.getString("alert"));
+            Map<String, Object> alertData = jsonToMap(bundle.getString("alert-loc"));
             String notificationMessage = null;
 
             if (alertData != null) {
