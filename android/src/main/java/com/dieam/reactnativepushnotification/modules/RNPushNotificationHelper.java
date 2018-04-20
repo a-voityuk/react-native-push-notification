@@ -210,7 +210,7 @@ public class RNPushNotificationHelper {
 
 
             String badgeString = bundle.getString("badge");
-            Log.e(LOG_TAG, badgeString);
+
             if (badgeString != null) {
                 int badge = Integer.parseInt(badgeString);
                 Log.e(LOG_TAG, String.format("badge %d", badge));
@@ -527,7 +527,9 @@ public class RNPushNotificationHelper {
     }
 
     public static Map<String, Object> jsonToMap(String t) throws JSONException {
-        Map<String, Object> retMap = new HashMap<String, Object>();
+        if (t == null) return null;
+
+        Map<String, Object> retMap = new HashMap<>();
         JSONObject json = new JSONObject(t);
 
         if (json != JSONObject.NULL) {
