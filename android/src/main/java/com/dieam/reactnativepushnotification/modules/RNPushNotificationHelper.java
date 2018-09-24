@@ -156,7 +156,7 @@ public class RNPushNotificationHelper {
 
             Resources res = context.getResources();
             String packageName = context.getPackageName();
-            Map<String, Object> alertData = jsonToMap(bundle.getString("alert"));
+            Map<String, Object> alertData = jsonToMap(bundle.getString("alert-loc"));
             String notificationMessage = null;
 
             if (alertData != null) {
@@ -249,7 +249,16 @@ public class RNPushNotificationHelper {
                         visibility = NotificationCompat.VISIBILITY_PRIVATE;
                 }
             }
-
+            
+            String badgeString = bundle.getString("badge");
+            Log.e(LOG_TAG, badgeString);
+            if (badgeString != null) {
+                int badge = Integer.parseInt(badgeString);
+                Log.e(LOG_TAG, String.format("badge %d", badge));
+                
+                ApplicationBadgeHelper.INSTANCE.setApplicationIconBadgeNumber(context, badge);
+            }
+            
             NotificationCompat.Builder notification = new NotificationCompat.Builder(context, NOTIFICATION_CHANNEL_ID)
                     .setContentTitle(title)
                     .setTicker(bundle.getString("ticker"))
