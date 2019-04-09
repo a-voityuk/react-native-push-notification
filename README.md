@@ -1,6 +1,6 @@
 # React Native Push Notifications
-[![npm version](https://badge.fury.io/js/react-native-push-notification.svg?update=7)](http://badge.fury.io/js/react-native-push-notification)
-[![npm downloads](https://img.shields.io/npm/dm/react-native-push-notification.svg?update=7)](http://badge.fury.io/js/react-native-push-notification)
+[![npm version](https://badge.fury.io/js/react-native-push-notification.svg?update=8)](http://badge.fury.io/js/react-native-push-notification)
+[![npm downloads](https://img.shields.io/npm/dm/react-native-push-notification.svg?update=8)](http://badge.fury.io/js/react-native-push-notification)
 
 React Native Local and Remote Notifications for iOS and Android
 
@@ -38,7 +38,7 @@ The component uses PushNotificationIOS for the iOS part.
 
 ## Android manual Installation
 
-**NOTE: To use a specific `play-service-gcm` or `firebase-messaging` version:**
+**NOTE: `play-service-gcm` and `firebase-messaging`, prior to version 15 requires to have the same version number in order to work correctly at build time and at run time. To use a specific version:**
 
 In your `android/build.gradle`
 ```gradle
