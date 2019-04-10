@@ -148,6 +148,11 @@ public class RNPushNotificationHelper {
                 return;
             }
 
+            if (bundle != null && bundle.getBoolean("foreground", false)) {
+                Log.e(LOG_TAG, "app foreground");
+                return;
+            }
+
             String notificationIdString = bundle.getString("id");
             if (notificationIdString == null) {
                 Log.e(LOG_TAG, "No notification ID specified for the notification");
