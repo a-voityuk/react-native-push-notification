@@ -148,11 +148,6 @@ public class RNPushNotificationHelper {
                 return;
             }
 
-            if (bundle != null && bundle.getBoolean("foreground", false)) {
-                Log.e(LOG_TAG, "app foreground");
-                return;
-            }
-
             String notificationIdString = bundle.getString("id");
             if (notificationIdString == null) {
                 Log.e(LOG_TAG, "No notification ID specified for the notification");
@@ -161,34 +156,53 @@ public class RNPushNotificationHelper {
 
             Resources res = context.getResources();
             String packageName = context.getPackageName();
-            Map<String, Object> alertData = jsonToMap(bundle.getString("alert-loc"));
             String notificationMessage = null;
 
+            String locKey = null;
+            List locArgs = null;
+            String arg1 = null;
+            String arg2 = null;
+
+            Map<String, Object> alertData = jsonToMap(bundle.getString("alert-loc"));
+
             if (alertData != null) {
-                String locKey = (String)alertData.get("loc-key");
-                List locArgs = (List) alertData.get("loc-args");
-                String arg1 = null;
-                String arg2 = null;
+                locKey = (String)alertData.get("loc-key");
+                locArgs = (List) alertData.get("loc-args");
+            } else {
+                try {
+                    locArgs = jsonToList(bundle.getString("loc-args"));
+                    locKey = bundle.getString("loc-key");
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
 
-                if (locArgs != null && locArgs.size() >= 1) {
+            if (locArgs != null && locArgs.size() >= 1) {
+                if (locArgs.get(0) instanceof Integer) {
+                    arg1 = String.valueOf(locArgs.get(0));
+                } else {
                     arg1 = (String)locArgs.get(0);
+                }
 
-                    if (locArgs.size() >= 2) {
+                if (locArgs.size() >= 2) {
+                    if (locArgs.get(1) instanceof Integer) {
+                        arg2 = String.valueOf(locArgs.get(1));
+                    } else {
                         arg2 = (String)locArgs.get(1);
                     }
                 }
+            }
 
-                if (locKey != null) {
-                    String localizedString = getLocalizedStringResourceByKey(locKey);
+            if (locKey != null) {
+                String localizedString = getLocalizedStringResourceByKey(locKey);
 
-                    if (localizedString != null) {
-                        if (arg1 != null && arg2 != null) {
-                            notificationMessage = String.format(localizedString, arg1, arg2);
-                        } else if (arg1 != null) {
-                            notificationMessage = String.format(localizedString, arg1);
-                        } else {
-                            notificationMessage = localizedString;
-                        }
+                if (localizedString != null) {
+                    if (arg1 != null && arg2 != null) {
+                        notificationMessage = String.format(localizedString, arg1, arg2);
+                    } else if (arg1 != null) {
+                        notificationMessage = String.format(localizedString, arg1);
+                    } else {
+                        notificationMessage = localizedString;
                     }
                 }
             }
@@ -256,7 +270,7 @@ public class RNPushNotificationHelper {
             }
             
             String badgeString = bundle.getString("badge");
-            Log.e(LOG_TAG, badgeString);
+//            Log.e(LOG_TAG, badgeString);
             if (badgeString != null) {
                 int badge = Integer.parseInt(badgeString);
                 Log.e(LOG_TAG, String.format("badge %d", badge));
@@ -637,6 +651,17 @@ public class RNPushNotificationHelper {
         channelCreated = true;
     }
 
+    public static List<Object> jsonToList(String t) throws JSONException {
+        if (t == null) return null;
+
+        List<Object> retList = new ArrayList<>();
+        JSONArray json = new JSONArray(t);
+
+        retList = toList(json);
+
+        return retList;
+    }
+
     public static Map<String, Object> jsonToMap(String t) throws JSONException {
         if (t == null) return null;
 
@@ -658,13 +683,12 @@ public class RNPushNotificationHelper {
             String key = keysItr.next();
             Object value = object.get(key);
 
-            if(value instanceof JSONArray) {
+            if (value instanceof JSONArray) {
                 value = toList((JSONArray) value);
-            }
-
-            else if(value instanceof JSONObject) {
+            } else if(value instanceof JSONObject) {
                 value = toMap((JSONObject) value);
             }
+
             map.put(key, value);
         }
         return map;
