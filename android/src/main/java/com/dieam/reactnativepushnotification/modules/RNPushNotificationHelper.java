@@ -19,23 +19,29 @@ import android.media.RingtoneManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
-import android.support.v4.app.NotificationCompat;
+import androidx.core.app.NotificationCompat;
 import android.util.Log;
 
-import com.dieam.reactnativepushnotification.helpers.ApplicationBadgeHelper;
 import com.facebook.react.bridge.ReadableMap;
 
 import org.json.JSONArray;
 import org.json.JSONException;
-import org.json.JSONObject;
 
 import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.GregorianCalendar;
+
+import org.json.JSONObject;
+
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Formatter;
+
+import com.dieam.reactnativepushnotification.helpers.ApplicationBadgeHelper;
 
 import static com.dieam.reactnativepushnotification.modules.RNPushNotification.LOG_TAG;
 import static com.dieam.reactnativepushnotification.modules.RNPushNotificationAttributes.fromJson;
@@ -268,7 +274,7 @@ public class RNPushNotificationHelper {
                         visibility = NotificationCompat.VISIBILITY_PRIVATE;
                 }
             }
-            
+
             String badgeString = bundle.getString("badge");
 //            Log.e(LOG_TAG, badgeString);
             if (badgeString != null) {
@@ -277,6 +283,8 @@ public class RNPushNotificationHelper {
                 
                 ApplicationBadgeHelper.INSTANCE.setApplicationIconBadgeNumber(context, badge);
             }
+
+            if (notificationMessage == null || notificationMessage.length() == 0) return;
             
             NotificationCompat.Builder notification = new NotificationCompat.Builder(context, NOTIFICATION_CHANNEL_ID)
                     .setContentTitle(title)
@@ -483,7 +491,7 @@ public class RNPushNotificationHelper {
         if (repeatType != null) {
             long fireDate = (long) bundle.getDouble("fireDate");
 
-            boolean validRepeatType = Arrays.asList("time", "week", "day", "hour", "minute").contains(repeatType);
+            boolean validRepeatType = Arrays.asList("time", "month", "week", "day", "hour", "minute").contains(repeatType);
 
             // Sanity checks
             if (!validRepeatType) {
@@ -502,6 +510,26 @@ public class RNPushNotificationHelper {
             switch (repeatType) {
                 case "time":
                     newFireDate = fireDate + repeatTime;
+                    break;
+                case "month":
+                    final Calendar fireDateCalendar = new GregorianCalendar();
+                    fireDateCalendar.setTime(new Date(fireDate));
+                    final int fireDay = fireDateCalendar.get(Calendar.DAY_OF_MONTH);
+                    final int fireMinute = fireDateCalendar.get(Calendar.MINUTE);
+                    final int fireHour = fireDateCalendar.get(Calendar.HOUR_OF_DAY);
+
+                    final Calendar nextEvent = new GregorianCalendar();
+                    nextEvent.setTime(new Date());
+                    final int currentMonth = nextEvent.get(Calendar.MONTH);
+                    int nextMonth = currentMonth < 11 ? (currentMonth + 1) : 0;
+                    nextEvent.set(Calendar.YEAR, nextEvent.get(Calendar.YEAR) + (nextMonth == 0 ? 1 : 0));
+                    nextEvent.set(Calendar.MONTH, nextMonth);
+                    final int maxDay = nextEvent.getActualMaximum(Calendar.DAY_OF_MONTH);
+                    nextEvent.set(Calendar.DAY_OF_MONTH, fireDay <= maxDay ? fireDay : maxDay);
+                    nextEvent.set(Calendar.HOUR_OF_DAY, fireHour);
+                    nextEvent.set(Calendar.MINUTE, fireMinute);
+                    nextEvent.set(Calendar.SECOND, 0);
+                    newFireDate = nextEvent.getTimeInMillis();
                     break;
                 case "week":
                     newFireDate = fireDate + 7 * ONE_DAY;
@@ -642,7 +670,8 @@ public class RNPushNotificationHelper {
             }
         }
 
-        NotificationChannel channel = new NotificationChannel(NOTIFICATION_CHANNEL_ID, this.config.getChannelName(), importance);
+        NotificationChannel channel = new NotificationChannel(NOTIFICATION_CHANNEL_ID, this.config.getChannelName() != null ? this.config.getChannelName() : "rn-push-notification-channel", importance);
+
         channel.setDescription(this.config.getChannelDescription());
         channel.enableLights(true);
         channel.enableVibration(true);
