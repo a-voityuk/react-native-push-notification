@@ -36,6 +36,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Formatter;
 
+import com.dieam.reactnativepushnotification.helpers.ApplicationBadgeHelper;
 import static com.dieam.reactnativepushnotification.modules.RNPushNotification.LOG_TAG;
 import static com.dieam.reactnativepushnotification.modules.RNPushNotificationAttributes.fromJson;
 
