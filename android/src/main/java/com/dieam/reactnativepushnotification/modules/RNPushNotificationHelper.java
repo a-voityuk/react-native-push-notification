@@ -277,7 +277,11 @@ public class RNPushNotificationHelper {
                 
                 ApplicationBadgeHelper.INSTANCE.setApplicationIconBadgeNumber(context, badge);
             }
-            
+
+            if (notificationMessage == null || notificationMessage.length() == 0) {
+                return;
+            }
+
             NotificationCompat.Builder notification = new NotificationCompat.Builder(context, NOTIFICATION_CHANNEL_ID)
                     .setContentTitle(title)
                     .setTicker(bundle.getString("ticker"))
